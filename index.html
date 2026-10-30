@@ -374,4 +374,17 @@ function learnClear(){let c=document.getElementById("learnCanvas");if(c)c.getCon
 /* Make the existing Learning button open the new library, retaining older lessons as an optional legacy path. */
 const expandedOpenAcademy=openAcademy;openAcademy=function(){learnOpen()};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("learnWorld").classList.contains("active"))learnClose()});
+</script><style>
+/* Replace repeated Explore Now interruptions with one calm, always-available discovery action. */
+#explorePrompt,#hint{display:none!important}
+#controls .control.action{background:#ffe0a0;color:#244a35;border:3px solid #fff9db;box-shadow:0 5px 22px #0006}
+#discoveryStatus{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(125px + env(safe-area-inset-bottom));z-index:7;background:#173d35e9;color:#fff7d8;padding:8px 14px;border-radius:15px;max-width:70vw;font-size:.94rem;text-align:center;pointer-events:none;display:none}
+#discoveryStatus.show{display:block}
+@media(max-width:680px){#discoveryStatus{bottom:calc(105px + env(safe-area-inset-bottom));font-size:.82rem;max-width:62vw;padding:7px 10px}}
+@media(max-width:680px) and (max-height:530px){#discoveryStatus{bottom:calc(78px + env(safe-area-inset-bottom));font-size:.72rem}}
+</style><div id="discoveryStatus" aria-live="polite"></div><script>
+/* Nearby discoveries become available automatically. The child chooses when to open them. */
+const oldDiscoveryTick=tick;let discoveryLastId="",discoveryLastAnnounced=0;
+tick=function(ts){oldDiscoveryTick(ts);let status=document.getElementById("discoveryStatus"),action=document.getElementById("action");let ready=!!(playing&&!activityOpen&&!academyActive&&!document.getElementById("learnWorld").classList.contains("active")&&nearest);if(status){status.classList.toggle("show",ready);if(ready){let label=(found[nearest.id]?"Visit again: ":"Found: ")+nearest.icon+" "+(kid==="caleb"?"Tap the star to see!":kid==="joseph"?"Tap Discover when ready.":"Inspect this discovery when ready.");if(status.textContent!==label)status.textContent=label}}if(action){action.textContent=ready?"✦ Discover":"✦ Look";action.setAttribute("aria-label",ready?"Discover nearby object":"Look for discoveries")}let prompt=document.getElementById("explorePrompt");if(prompt)prompt.classList.remove("show")};
+const oldDiscoveryStart=start;start=function(id){oldDiscoveryStart(id);let p=document.getElementById("explorePrompt");if(p)p.classList.remove("show");discoveryLastId=""};
 </script></body></html>
