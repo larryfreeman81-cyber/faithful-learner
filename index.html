@@ -14,7 +14,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id),canvas=$("world"),ctx=canvas.getContext("2d"),TAU=Math.PI*2;
-let W=0,H=0,VW=0,VH=0,DPR=1,camX=0,camY=0,clock=0,kid="",player={x:.10,y:.74,tx:.10,ty:.74,face:1},speaking="",voiceEnabled=true,activeQuestion=null,noticeTimer=null;
+let W=0,H=0,VW=0,VH=0,DPR=1,camX=0,camY=0,clock=0,kid="",player={x:.08,y:.74,tx:.08,ty:.74,face:1},speaking="",voiceEnabled=true,activeQuestion=null,noticeTimer=null;
 const names={asher:"Asher",joseph:"Joseph",caleb:"Caleb"};
 const stages=[
 {title:"Collect three city garden seeds",kind:"seed",count:3,hint:"Find golden seeds near the city gardens. Tap them, or walk close and press the hand."},
@@ -33,19 +33,21 @@ const things=[
 ];
 // A large connected world: five regions and a long route between them.
 things.splice(0,things.length,
-{x:.10,y:.73,type:"seed",emoji:"🌰"},{x:.16,y:.77,type:"seed",emoji:"🌰"},{x:.23,y:.68,type:"seed",emoji:"🌰"},
-{x:.26,y:.66,type:"clue",emoji:"🔎"},{x:.32,y:.74,type:"clue",emoji:"🔎"},
-{x:.51,y:.63,type:"garden",emoji:"🌱"},{x:.57,y:.75,type:"garden",emoji:"🌱"},
-{x:.65,y:.59,type:"puzzle",emoji:"🧩"},{x:.72,y:.74,type:"puzzle",emoji:"💡"},{x:.78,y:.58,type:"puzzle",emoji:"🔤"},
-{x:.86,y:.75,type:"build",emoji:"🛠️"},{x:.95,y:.74,type:"tree",emoji:"🌳"});
+{x:.08,y:.73,type:"seed",emoji:"🌰"},{x:.12,y:.77,type:"seed",emoji:"🌰"},{x:.17,y:.68,type:"seed",emoji:"🌰"},
+{x:.27,y:.66,type:"clue",emoji:"🔎"},{x:.32,y:.74,type:"clue",emoji:"🔎"},
+{x:.50,y:.63,type:"garden",emoji:"🌱"},{x:.55,y:.75,type:"garden",emoji:"🌱"},
+{x:.64,y:.59,type:"puzzle",emoji:"🧩"},{x:.69,y:.74,type:"puzzle",emoji:"💡"},{x:.73,y:.58,type:"puzzle",emoji:"🔤"},
+{x:.82,y:.75,type:"build",emoji:"🛠️"},{x:.92,y:.74,type:"tree",emoji:"🌳"});
 const regions=[
-{name:"Sunrise Square",x:.10,subtitle:"The city begins here",emoji:"🌇"},
-{name:"Library Lane",x:.27,subtitle:"Stories and secret clues",emoji:"📚"},
-{name:"Discovery District",x:.42,subtitle:"Science and invention",emoji:"🔬"},
-{name:"Garden Quarter",x:.55,subtitle:"Grow something wonderful",emoji:"🌻"},
-{name:"Puzzle Plaza",x:.70,subtitle:"City mysteries to solve",emoji:"🧩"},
-{name:"Maker's Market",x:.85,subtitle:"Build and create",emoji:"🛠️"},
-{name:"Grand Central Park",x:.95,subtitle:"A place to gather and rest",emoji:"🌳"}
+{name:"Sunrise Square",x:.08,subtitle:"Busy avenues and brownstones",emoji:"🌇"},
+{name:"Riverside Park",x:.19,subtitle:"Riverwalk, benches and playground",emoji:"🌳"},
+{name:"Library Lane",x:.29,subtitle:"Stories and secret clues",emoji:"📚"},
+{name:"Discovery District",x:.41,subtitle:"Science and invention",emoji:"🔬"},
+{name:"Garden Quarter",x:.53,subtitle:"Grow something wonderful",emoji:"🌻"},
+{name:"Puzzle Plaza",x:.66,subtitle:"City mysteries to solve",emoji:"🧩"},
+{name:"Maker's Market",x:.81,subtitle:"Build and create",emoji:"🛠️"},
+{name:"Grand Central Park",x:.92,subtitle:"Great lawns, lake, bridges and paths",emoji:"🌳"},
+{name:"Harbor Promenade",x:.98,subtitle:"Waterfront and city views",emoji:"⛵"}
 ];
 const questions=[
 [{q:"Which animal grows from a tadpole?",a:["Frog","Butterfly"],right:0,why:"A tadpole grows into a frog."},{q:"What do birds use to fly?",a:["Wings","Shoes"],right:0,why:"Birds use their wings to fly."},{q:"Which animal makes honey?",a:["Bee","Rabbit"],right:0,why:"Bees gather nectar and make honey."}],
@@ -56,7 +58,7 @@ const questions=[
 let save={stage:0,progress:0,stars:0,bag:0,done:[],round:0,plants:0,built:false};
 function store(){if(kid)localStorage.setItem("wondercity:"+kid,JSON.stringify(save))}
 function load(){try{save=Object.assign({stage:0,progress:0,stars:0,bag:0,done:[],round:0,plants:0,built:false},JSON.parse(localStorage.getItem("wondercity:"+kid)||"{}"))}catch(e){}}
-function size(){DPR=Math.min(devicePixelRatio||1,2);VW=innerWidth;VH=innerHeight;W=Math.max(6400,VW*9);H=Math.max(2000,VH*3);canvas.width=Math.round(VW*DPR);canvas.height=Math.round(VH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener("resize",size);size();
+function size(){DPR=Math.min(devicePixelRatio||1,2);VW=innerWidth;VH=innerHeight;W=Math.max(9000,VW*12);H=Math.max(2000,VH*3);canvas.width=Math.round(VW*DPR);canvas.height=Math.round(VH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener("resize",size);size();
 function dot(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
 function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill()}
 function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
@@ -84,6 +86,17 @@ function building(x,ground,w,h,color,style=0){ctx.save();ctx.translate(x,ground)
 function cityTree(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);rounded(-8,-78,16,91,5,"#79573e");for(let i=0;i<6;i++)dot(Math.sin(i*2.5)*25,-95+Math.cos(i*2)*14,28,["#269a73","#45b98a","#69cb9a"][i%3]);ctx.restore()}
 function lamp(x,y){rounded(x-4,y-100,8,100,3,"#526a7c");dot(x,y-105,14,"#ffe7a0");rounded(x-15,y-119,30,6,3,"#425c6c")}
 function cloudCity(x,y,s){ctx.save();ctx.globalAlpha=.82;ellipse(x,y,45*s,18*s,"#fff");ellipse(x-28*s,y+7*s,29*s,14*s,"#fff");ellipse(x+29*s,y+7*s,33*s,14*s,"#fff");ctx.restore()}
+const parks=[{x:.19,name:"Riverside Park",width:850},{x:.92,name:"Grand Central Park",width:1150}];
+function parkScenery(p,ground,left,right){
+let cx=p.x*W,half=p.width/2;if(cx+half<left||cx-half>right)return;ctx.save();
+rounded(cx-half,ground-210,p.width,265,30,"#8fd0a0");rounded(cx-half+15,ground-195,p.width-30,235,24,"#69bd89");
+for(let i=0;i<Math.floor(p.width/105);i++){let x=cx-half+55+i*105,y=ground-140-(i%3)*24;cityTree(x,y,.7+(i%3)*.22)}
+ctx.fillStyle="#f6e1b4";ctx.beginPath();ctx.moveTo(cx-half,ground-32);ctx.bezierCurveTo(cx-120,ground-105,cx+110,ground-70,cx+half,ground-30);ctx.lineTo(cx+half,ground+12);ctx.bezierCurveTo(cx+110,ground-23,cx-120,ground-55,cx-half,ground+14);ctx.closePath();ctx.fill();
+ellipse(cx+half*.28,ground-142,p.width*.18,48,"#78d3e9");ellipse(cx+half*.28,ground-151,p.width*.15,30,"#a5eaf0");
+for(let i=0;i<4;i++){let bx=cx-half+120+i*185;rounded(bx-24,ground-54,48,8,3,"#966b51");rounded(bx-21,ground-77,42,22,3,"#bd8960");rounded(bx-18,ground-47,6,24,2,"#735a49");rounded(bx+12,ground-47,6,24,2,"#735a49")}
+let px=cx-half+185;rounded(px-70,ground-168,140,9,3,"#f8d69b");rounded(px-56,ground-158,9,105,3,"#f2d49d");rounded(px+47,ground-158,9,105,3,"#f2d49d");rounded(px-70,ground-190,140,26,4,"#e57b74");
+let fx=cx+half-175;rounded(fx-65,ground-96,130,9,3,"#e5b76c");rounded(fx-58,ground-90,8,75,3,"#d7a35d");rounded(fx+50,ground-90,8,75,3,"#d7a35d");for(let i=0;i<3;i++){ctx.strokeStyle="#f7dfab";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(fx-40+i*40,ground-89);ctx.lineTo(fx-40+i*40,ground-44);ctx.stroke();rounded(fx-54+i*40,ground-44,28,6,3,"#f8d6a0")}
+ctx.fillStyle="#fff9e8";ctx.textAlign="center";ctx.font="bold 23px Trebuchet MS";ctx.fillText(p.name,cx,ground-214);ctx.restore()}
 function scene(){
 const left=Math.max(0,camX-300),right=Math.min(W,camX+VW+300),ground=H*.78;
 let sky=ctx.createLinearGradient(0,camY,0,camY+VH);sky.addColorStop(0,"#5cbbeb");sky.addColorStop(.7,"#c4edf3");sky.addColorStop(1,"#ffe4b8");ctx.fillStyle=sky;ctx.fillRect(left,Math.max(0,camY-20),right-left,VH+80);
@@ -92,10 +105,10 @@ for(let i=Math.floor(left/340);i<=Math.ceil(right/340);i++)cloudCity(i*340+Math.
 ctx.fillStyle="#93b8c9";for(let i=Math.floor(left/125);i<Math.ceil(right/125);i++){let x=i*125;rounded(x,H*.52-(i%4)*35,100,H*.27+(i%4)*35,3,"#8db9c6")}
 ctx.fillStyle="#d7d2bf";ctx.fillRect(left,ground,right-left,H*.11);ctx.fillStyle="#526777";ctx.fillRect(left,H*.89,right-left,H*.11);ctx.fillStyle="#fff1c6";for(let x=Math.floor(left/95)*95;x<right;x+=95)rounded(x,H*.94,49,7,2,"#fff1c6");
 for(let i=Math.floor(left/180);i<=Math.ceil(right/180);i++){let x=i*180+90,zone=x/W;let color=["#efb9a3","#f5cf8b","#b6c9e7","#b8d7c0","#d9b8e8","#f2bf96","#c2d9c7"][Math.min(6,Math.floor(zone*7))];let bh=145+(i%4)*43;
-if(i%5===0)cityTree(x,ground,1.05);else building(x,ground,125,bh,color,i%4===0?2:i%3===0?1:0);
+if(parks.some(p=>Math.abs(x-p.x*W)<p.width/2+30)){continue}else if(i%5===0)cityTree(x,ground,1.05);else building(x,ground,125,bh,color,i%4===0?2:i%3===0?1:0);
 if(i%3===0)lamp(x+74,ground)}
 for(let i=Math.floor(left/240);i<=Math.ceil(right/240);i++){let x=i*240+110;rounded(x-48,H*.84,96,12,6,"#c4b7a0");rounded(x-37,H*.825,74,10,3,"#f2e6c9");if(i%2===0){dot(x-70,H*.86,7,"#ffeab7");dot(x+70,H*.86,7,"#ffeab7")}}
-const parkX=W*.95;if(left<parkX+250&&right>parkX-250){ctx.fillStyle="#75bc87";ctx.fillRect(parkX-260,ground-60,520,135);for(let k=-2;k<=2;k++)cityTree(parkX+k*100,ground,1.2);cityTree(parkX,ground-10,2.2)}
+parks.forEach(p=>parkScenery(p,ground,left,right));
 if(save.built)building(W*.855,ground,150,170,"#ffddaa",1);
 for(let i=Math.floor(left/300);i<=Math.ceil(right/300);i++){let x=i*300+20,y=ground-35;ctx.save();ctx.globalAlpha=.35+.2*Math.sin(clock*2+i);dot(x,y,5,"#fff6c8");ctx.restore()}
 }
