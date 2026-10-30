@@ -97,19 +97,29 @@ for(let i=0;i<4;i++){let bx=cx-half+120+i*185;rounded(bx-24,ground-54,48,8,3,"#9
 let px=cx-half+185;rounded(px-70,ground-168,140,9,3,"#f8d69b");rounded(px-56,ground-158,9,105,3,"#f2d49d");rounded(px+47,ground-158,9,105,3,"#f2d49d");rounded(px-70,ground-190,140,26,4,"#e57b74");
 let fx=cx+half-175;rounded(fx-65,ground-96,130,9,3,"#e5b76c");rounded(fx-58,ground-90,8,75,3,"#d7a35d");rounded(fx+50,ground-90,8,75,3,"#d7a35d");for(let i=0;i<3;i++){ctx.strokeStyle="#f7dfab";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(fx-40+i*40,ground-89);ctx.lineTo(fx-40+i*40,ground-44);ctx.stroke();rounded(fx-54+i*40,ground-44,28,6,3,"#f8d6a0")}
 ctx.fillStyle="#fff9e8";ctx.textAlign="center";ctx.font="bold 23px Trebuchet MS";ctx.fillText(p.name,cx,ground-214);ctx.restore()}
+// Deterministic detail generation: rich city blocks without loading huge assets.
+function seeded(n){let v=Math.sin(n*127.1+78.233)*43758.5453;return v-Math.floor(v)}
+function skylineTower(x,y,w,h,seed){let c=["#4a7199","#6689aa","#8fa9bc","#5d7e99","#a0aebd"][seed%5];rounded(x-w/2,y-h,w,h,3,c);rounded(x-w/2-5,y-h-9,w+10,12,2,"#385d81");if(seed%4===0){rounded(x-3,y-h-65,6,56,2,"#4a6883");dot(x,y-h-67,5,"#f7da8e")}for(let row=0;row<Math.floor((h-22)/19);row++)for(let col=0;col<Math.floor((w-10)/16);col++){let wx=x-w/2+9+col*16,wy=y-h+15+row*19;rounded(wx,wy,9,12,1,seeded(seed*97+row*17+col)>.73?"#ffde97":"#b4dbe5")} }
+function taxi(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,5,54,8,"#20364a66");rounded(-49,-21,98,27,7,"#f4c73e");rounded(-26,-37,54,20,6,"#f4c73e");rounded(-21,-33,19,14,3,"#b7e8f2");rounded(4,-33,19,14,3,"#b7e8f2");dot(-30,7,12,"#2d3e50");dot(30,7,12,"#2d3e50");dot(-30,7,5,"#9fa8af");dot(30,7,5,"#9fa8af");rounded(-13,-43,26,7,2,"#f9f6df");ctx.restore()}
+function bus(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);rounded(-84,-58,168,62,9,"#e7a54c");rounded(-80,-53,160,30,5,"#f7d37a");for(let i=0;i<6;i++)rounded(-68+i*24,-47,19,20,3,"#9bcee0");rounded(-84,-17,168,15,2,"#4e7898");dot(-58,6,13,"#354557");dot(57,6,13,"#354557");ctx.restore()}
+function bridge(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);rounded(-180,-8,360,15,3,"#a1b3bd");for(let i=-4;i<=4;i++)rounded(i*40-3,-5,6,90,2,"#6c8596");for(let i=-4;i<=4;i++){ctx.strokeStyle="#e7edf0";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(i*40,-8);ctx.quadraticCurveTo(i*20,-110,0,-130);ctx.stroke()}rounded(-6,-155,12,160,2,"#6d889d");ctx.restore()}
+function streetDetails(left,right,ground){for(let i=Math.floor(left/210);i<=Math.ceil(right/210);i++){let x=i*210+35;if(parks.some(p=>Math.abs(x-p.x*W)<p.width/2))continue;
+rounded(x-27,ground-3,54,5,2,"#b7b0a0");rounded(x-24,ground-9,48,6,2,"#e6b878");if(i%3===0){rounded(x-34,ground-28,68,18,5,"#ad725d");rounded(x-25,ground-48,50,20,4,"#d6a36f");for(let k=0;k<3;k++)dot(x-15+k*15,ground-50,6,"#e5efb6")}
+if(i%4===0){rounded(x+66,ground-65,4,68,2,"#496875");rounded(x+56,ground-68,25,20,3,"#e9d9a5");rounded(x+61,ground-64,15,12,2,"#416e81")}
+if(i%5===0){ctx.save();ctx.fillStyle="#527a92";ctx.font="bold 12px Trebuchet MS";ctx.textAlign="center";ctx.fillText("WONDER CITY",x,ground-83);ctx.restore()}}}
 function scene(){
 const left=Math.max(0,camX-300),right=Math.min(W,camX+VW+300),ground=H*.78;
 let sky=ctx.createLinearGradient(0,camY,0,camY+VH);sky.addColorStop(0,"#5cbbeb");sky.addColorStop(.7,"#c4edf3");sky.addColorStop(1,"#ffe4b8");ctx.fillStyle=sky;ctx.fillRect(left,Math.max(0,camY-20),right-left,VH+80);
 dot(camX+VW*.81,camY+VH*.13,43,"#fff1ae");
 for(let i=Math.floor(left/340);i<=Math.ceil(right/340);i++)cloudCity(i*340+Math.sin(clock*.12+i)*22,H*.15+(i%3)*55,.9);
-ctx.fillStyle="#93b8c9";for(let i=Math.floor(left/125);i<Math.ceil(right/125);i++){let x=i*125;rounded(x,H*.52-(i%4)*35,100,H*.27+(i%4)*35,3,"#8db9c6")}
+for(let i=Math.floor(left/95);i<=Math.ceil(right/95);i++){let x=i*95+40;skylineTower(x,H*.57,65+(i%3)*9,175+(i%7)*43,i)}
 ctx.fillStyle="#d7d2bf";ctx.fillRect(left,ground,right-left,H*.11);ctx.fillStyle="#526777";ctx.fillRect(left,H*.89,right-left,H*.11);ctx.fillStyle="#fff1c6";for(let x=Math.floor(left/95)*95;x<right;x+=95)rounded(x,H*.94,49,7,2,"#fff1c6");
 for(let i=Math.floor(left/180);i<=Math.ceil(right/180);i++){let x=i*180+90,zone=x/W;let color=["#efb9a3","#f5cf8b","#b6c9e7","#b8d7c0","#d9b8e8","#f2bf96","#c2d9c7"][Math.min(6,Math.floor(zone*7))];let bh=145+(i%4)*43;
 if(parks.some(p=>Math.abs(x-p.x*W)<p.width/2+30)){continue}else if(i%5===0)cityTree(x,ground,1.05);else building(x,ground,125,bh,color,i%4===0?2:i%3===0?1:0);
 if(i%3===0)lamp(x+74,ground)}
 for(let i=Math.floor(left/240);i<=Math.ceil(right/240);i++){let x=i*240+110;rounded(x-48,H*.84,96,12,6,"#c4b7a0");rounded(x-37,H*.825,74,10,3,"#f2e6c9");if(i%2===0){dot(x-70,H*.86,7,"#ffeab7");dot(x+70,H*.86,7,"#ffeab7")}}
-parks.forEach(p=>parkScenery(p,ground,left,right));
-if(save.built)building(W*.855,ground,150,170,"#ffddaa",1);
+parks.forEach(p=>parkScenery(p,ground,left,right));streetDetails(left,right,ground);
+if(save.built)building(W*.855,ground,150,170,"#ffddaa",1);for(let i=Math.floor(left/630);i<=Math.ceil(right/630);i++){let x=i*630+240;if(i%3===0)taxi(x+Math.sin(clock*.55+i)*90,H*.935,.65);else if(i%3===1)bus(x-Math.sin(clock*.25+i)*75,H*.933,.56)}if(left<W*.97&&right>W*.89)bridge(W*.94,H*.63,1.1);
 for(let i=Math.floor(left/300);i<=Math.ceil(right/300);i++){let x=i*300+20,y=ground-35;ctx.save();ctx.globalAlpha=.35+.2*Math.sin(clock*2+i);dot(x,y,5,"#fff6c8");ctx.restore()}
 }
 function marker(t,i){const x=t.x*W,y=t.y*H,used=save.done.includes(t.type+i),right=stage().kind===t.type;if(used&&["seed","clue"].includes(t.type))return;ctx.save();ctx.shadowColor=right?"#fff1a5":"#1c756b";ctx.shadowBlur=right?27:10;dot(x,y+Math.sin(clock*3+i)*3,right?28:24,right?"#fff3b9":"#d6f8df");ctx.shadowBlur=0;ctx.font="30px system-ui";ctx.textAlign="center";ctx.fillText(t.emoji,x,y+10+Math.sin(clock*3+i)*3);if(right){ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,34+Math.sin(clock*3)*2,0,TAU);ctx.stroke()}ctx.restore()}
