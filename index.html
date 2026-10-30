@@ -493,4 +493,26 @@ const wlTick=tick;tick=function(ts){wlTick(ts);if(!playing)return;let c=document
 setInterval(()=>{if(playing)wlUpdateDay()},60000);
 const wlShowKids=showKids;showKids=function(){wlHide();document.getElementById("dailyWorldChip").classList.remove("show");wlShowKids()};
 const wlShowWorlds=showWorlds;showWorlds=function(){wlHide();document.getElementById("dailyWorldChip").classList.remove("show");wlShowWorlds()};
+</script><style>
+/* Visibly new release: full-screen adventure entry, simplified HUD, embedded discoveries. */
+#overlay{background:radial-gradient(ellipse at 50% 25%,#80b9a0aa,transparent 55%),linear-gradient(155deg,#122f31,#1b554b 58%,#729773);padding:12px}
+#overlay .panel{background:linear-gradient(160deg,#fff8e8,#e6f2dd);border:2px solid #fff8db;border-radius:25px;max-width:850px;box-shadow:0 20px 70px #061d1a8a}
+#overlay .panel h1{font-size:clamp(2.2rem,7vw,4rem);letter-spacing:-.04em}
+#overlay .panel .option{background:linear-gradient(145deg,#eff8de,#b8d7bd);border:2px solid #92b99f;box-shadow:0 6px 0 #86aa8e;transition:transform .12s}
+#overlay .panel .option:active{transform:translateY(4px)}
+#controls .control.action{background:#ffdf8d;color:#183d32;border:3px solid #fff5c5;font-size:clamp(.82rem,2.6vw,1.1rem)}
+#hud{z-index:6}#hud .hudbox{background:#163c36bd;border:1px solid #e4e7c277}#menuBtn{font-size:.87rem;padding:10px 13px;background:#fff0c6}
+#quest,#journal,#hint,#explorePrompt,#sacredDayWelcome,#sacredDayBanner{display:none!important}
+#worldLearningHUD .wlBox{border:2px solid #f5d992}
+#releaseMark{position:fixed;right:8px;bottom:calc(5px + env(safe-area-inset-bottom));font-size:.62rem;color:#fff9ce99;z-index:2;pointer-events:none}
+@media(max-width:640px){#overlay .panel{padding:18px}#overlay .options{gap:10px}#overlay .option{min-height:115px}#hud .hudbox{max-width:50vw}#hud .hudbox small{font-size:.7rem}}
+</style><div id="releaseMark">FAITHFUL LEARNER · WORLD EDITION 2.1</div><script>
+/* Replace the old home text and stale Explore button label on this release. */
+function freshGameEntry(){let p=heroProfiles[kid],d=sacredToday();return '<div style="font-size:.85rem;letter-spacing:.15em;font-weight:800;color:#4c765e">FAITHFUL LEARNER · WORLD EDITION</div><h1>Step into your adventure.</h1><p>Explore living worlds. Touch discoveries. Learn through the world around you.</p><div style="background:#d8e8d2;border-radius:16px;padding:12px;margin:14px 0;color:#244b38"><b>Today’s theme: '+d.daily.theme+'</b><div>'+d.daily.task+'</div><small>Week '+d.weekNo+' · '+d.daily.verse+'</small></div><h2>Choose your character</h2><div class="options">'+Object.keys(heroProfiles).map(k=>{let a=heroProfiles[k];return '<button class="option" onclick="selectKid(\''+k+'\')"><span>'+a.symbol+'</span><b>'+a.name+'</b><small>'+a.role+'</small></button>'}).join("")+'</div>'}
+function freshWorldEntry(){let d=sacredToday();return '<button class="start" onclick="showKids()">← Characters</button><h1>'+names[kid]+"'s Living Worlds"+'</h1><p>Move through the landscape, tap glowing discoveries, and learn as you go.</p><div style="background:#e0eecf;padding:11px;border-radius:14px;margin:12px 0"><b>Today: '+d.daily.word+'</b> · '+d.daily.verse+'</div><div class="options">'+Object.entries(worlds).map(([id,w])=>'<button class="option" onclick="start(\''+id+'\')"><span>'+w[1]+'</span><b>'+w[0]+'</b><small>Explore · Discover · Create</small></button>').join("")+'</div>'}
+const freshShowKids=showKids;showKids=function(){freshShowKids();panel.innerHTML=freshGameEntry()};
+const freshShowWorlds=showWorlds;showWorlds=function(){freshShowWorlds();panel.innerHTML=freshWorldEntry()};
+const freshStart=start;start=function(id){freshStart(id);let action=document.getElementById("interact");if(action){action.textContent="✦ Discover";action.setAttribute("aria-label","Discover nearby object")}let menu=document.getElementById("menuBtn");if(menu)menu.textContent="☰ Worlds";};
+const freshTick=tick;tick=function(ts){freshTick(ts);let action=document.getElementById("interact");if(action&&playing&&!wlActive){action.textContent=nearest?"✦ Discover":"✦ Look"}};
+showKids();
 </script></body></html>
