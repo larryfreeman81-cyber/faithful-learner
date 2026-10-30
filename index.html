@@ -89,7 +89,28 @@ function drawBuildMenu(){$("buildChoices").innerHTML="";buildingPlans.forEach((p
 function showBuild(){$("buildPanel").hidden=false;drawBuildMenu();updateSupply()}
 const actionMissions=[["Build a habitat","Choose the three things a woodland animal needs.",["💧 Water","🌿 Shelter","🍎 Food","🚀 Rocket"],[0,1,2]],["Examine fossil evidence","Find three kinds of clues scientists can investigate.",["🦴 Fossil bone","🐾 Footprint","🪨 Rock layers","📱 Phone"],[0,1,2]],["Build the word SUN","Tap the letters in order.",["S","U","N"],[0,1,2]],["Build a number sequence","Tap one, two, then three.",["1","2","3"],[0,1,2]],["Plan an experiment","Choose a seed and two things it needs.",["🌱 Seed","💧 Water","☀️ Light","🧸 Toy"],[0,1,2]],["Tell the sky story","Select the source of light, the reflecting Moon, and Earth.",["☀️ Sun","🌙 Moon","🌍 Earth"],[0,1,2]],["Grow a garden","Choose a seed, water, and sunlight.",["🌱 Seed","💧 Water","☀️ Light","🧱 Brick"],[0,1,2]],["Follow the route","Travel from home, across the bridge, to the park.",["🏠 Home","🌉 Bridge","🌳 Park"],[0,1,2]],["Design a bridge","Choose supports, a deck, and connections.",["🏗️ Supports","🪵 Deck","🔩 Connections","🍭 Candy"],[0,1,2]],["Create a pattern","Make a red, blue, red pattern.",["🔴 Red","🔵 Blue","🔴 Red"],[0,1,2]],["Practice care","Choose listening, helping, and kind speech.",["👂 Listen","🤝 Help","💬 Speak kindly","💢 Shout"],[0,1,2]],["Hear and respond","Follow the movement from hearing to understanding to action.",["👂 Hear","🧠 Understand","🤲 Practice"],[0,1,2]]];
 function mission(){return actionMissions[active]}
-let presentedQuestion=null;function currentQuestion(){return presentedQuestion}
+let presentedQuestion=null;const weeklyInquiryDomains=[
+{stem:"A gardener stores {n} seeds and finds {m} more. How many seeds are there?",kind:"add",explain:"Combine the two groups to find the total."},
+{stem:"There are {n} stones. You use {m} for a shelter. How many remain?",kind:"subtract",explain:"Subtract the stones used from the original collection."},
+{stem:"You make {n} rows of {m} plants. How many plants altogether?",kind:"multiply",explain:"Multiply rows by plants in each row."},
+{stem:"A shelter needs {n} branches. You already have {m}. How many more are needed?",kind:"need",explain:"Find the difference between the target and what you have."}
+];
+function hashNumber(t){let n=2166136261;for(let c of t){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0}
+function weeklyQuestion(topic,phase){let w=today().week,seed=hashNumber([kid,w,topic,phase].join(":")),level=kid==="caleb"?0:kid==="joseph"?1:2,mode=(seed+topic+phase)%weeklyInquiryDomains.length;
+if(level===0)mode=seed%2;
+if(level===1&&mode===2)mode=0;
+let d=weeklyInquiryDomains[mode],n=level===0?2+seed%3:level===1?5+seed%8:9+seed%16,m=level===0?1:level===1?1+(seed>>>3)%4:2+(seed>>>4)%7;
+if(mode===1||mode===3)m=Math.min(m,n-1);
+let answer=mode===0?n+m:mode===1?n-m:mode===2?n*m:n-m;
+let question=d.stem.replace("{n}",String(n)).replace("{m}",String(m));
+let choices=[answer,answer+1,Math.max(0,answer-1),answer+2].filter((v,i,a)=>a.indexOf(v)===i);
+return [question,choices.map(String),0,d.explain+" "+n+" and "+m+" give "+answer+"."];
+}
+function topicQuestion(){let w=today().week,seed=hashNumber([kid,w,active,step].join(":"));let q=weeklyQuestion(active,step);if(active===3||active===4||active===6||active===8)return q;
+let bank=inquiryBank[active],base=bank[seed%bank.length];let question=base[0]+" Consider this during week "+w+": "+sacredWeek().theme+".";
+return [question,base[1].slice(),base[2],base[3]];
+}
+function currentQuestion(){return presentedQuestion}
 function stagePrompt(){let row=developmentalBank[kid]?.[active];return row?row:null}
 function inquiry(){let b=inquiryBank[active];return b[Math.max(0,Math.min(b.length-1,step-1))]}
 document.addEventListener("keydown",e=>{if(active<0||step<1||step>2||e.repeat)return;let k=e.key.toUpperCase();if(!["1","2","3","4"].includes(k))return;let b=$("activity").querySelector('[data-answer="'+k+'"]');if(b){e.preventDefault();b.click()}});
@@ -97,8 +118,8 @@ function close(){active=-1;$("lesson").hidden=true;update()}$("closeLesson").onc
 function open(i){active=i;chosen=i;step=0;presentedQuestion=null;ready=false;$("lesson").hidden=false;render();speak("Our sacred journey is "+teachingArc[stageIndex()].focus+". "+topics[i][1]+". "+topics[i][2])}
 function render(){
 if(active<0)return;
-let a=topics[active],q=step>=1&&step<=2?inquiry():null,limit=4,development=stagePrompt();if(development&&step===1)q=[development[1],development[2],development[3],development[4]];if(q){if(kid==="caleb"&&q[1].length>2){let correct=q[1][q[2]],wrong=q[1].find((_,i)=>i!==q[2]);q=[q[0],[correct,wrong],0,q[3]]}if(!presentedQuestion){let choices=q[1].map((v,i)=>({v,correct:i===q[2]}));for(let i=choices.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]]}presentedQuestion=[q[0],choices.map(c=>c.v),choices.findIndex(c=>c.correct),q[3]]}q=presentedQuestion}
-$("lessonTag").textContent="WEEK "+today().week+" · "+sacredWeek().station+" · "+teachingArc[stageIndex()].focus+" · "+skillStatus(active)+" · "+(step+1)+" / "+limit;
+let a=topics[active],q=step>=1&&step<=2?topicQuestion():null,limit=4,development=stagePrompt();if(development&&step===1&&today().week===1)q=[development[1],development[2],development[3],development[4]];if(q){if(kid==="caleb"&&q[1].length>2){let correct=q[1][q[2]],wrong=q[1].find((_,i)=>i!==q[2]);q=[q[0],[correct,wrong],0,q[3]]}if(!presentedQuestion){let choices=q[1].map((v,i)=>({v,correct:i===q[2]}));for(let i=choices.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]]}presentedQuestion=[q[0],choices.map(c=>c.v),choices.findIndex(c=>c.correct),q[3]]}q=presentedQuestion}
+$("lessonTag").textContent="NEW WEEKLY QUESTIONS · WEEK "+today().week+" · "+sacredWeek().station+" · "+teachingArc[stageIndex()].focus+" · "+skillStatus(active)+" · "+(step+1)+" / "+limit;
 $("lessonTitle").textContent=step===0?"Enter "+a[1]:step===3?mission()[0]:development&&step===1?development[0]:"Think like an explorer";
 $("lessonText").textContent=step===0?sacredWeek().theme+". "+a[2]+" "+learningFocus().level+" Learning goal: "+calendarTeaching().age.goal+". Scripture: "+calendarTeaching().scripture+". "+calendarTeaching().application:step===3?mission()[1]+" "+teachingArc[stageIndex()].practice:q[0];
 $("feedback").textContent="";
