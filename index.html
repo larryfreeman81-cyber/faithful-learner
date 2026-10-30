@@ -164,4 +164,34 @@ function finishLesson(){lessonProgress[lessonIndex]=true;saveLessons();let fb=do
 const academyStart=start;start=function(id){academyStart(id);document.getElementById("academyBtn").classList.add("show")};
 const academyWorlds=showWorlds;showWorlds=function(){closeAcademy();academyWorlds();document.getElementById("academyBtn").classList.remove("show")};
 const academyKids=showKids;showKids=function(){closeAcademy();academyKids();document.getElementById("academyBtn").classList.remove("show")};
+</script><style>
+#activityCard .activity-actions{position:sticky;bottom:-12px;background:#fffaf0;padding:12px 0;z-index:2}
+#activityCard .activity-actions button{min-height:60px}
+#schoolContent .lesson-tile{border:2px solid #b7d3ac}
+#schoolContent .lesson-tile:focus-visible{outline:4px solid #376e53}
+#learnFromWorld{background:#f1c96d!important;color:#183a2a!important}
+#academyBtn{font-size:1rem;min-height:50px}
+@media(max-width:650px){#activityCard .activity-actions{padding:8px 0}#activityCard .activity-actions button{min-height:56px}#academyBtn{z-index:7}}
+</style><script>
+/* Learning is part of each world: discovering a place unlocks a relevant interactive lesson. */
+const worldLearning={
+forest:{caleb:0,joseph:4,asher:0},
+dino:{caleb:1,joseph:1,asher:3},
+garden:{caleb:2,joseph:2,asher:4},
+sky:{caleb:5,joseph:5,asher:1}
+};
+const integratedOpenActivity=openActivity;
+openActivity=function(it){integratedOpenActivity(it);let card=document.getElementById("activityCard");let actions=card.querySelector(".activity-actions");if(actions&&!document.getElementById("learnFromWorld")){let b=document.createElement("button");b.id="learnFromWorld";b.textContent="📚 Learn with this discovery";b.onclick=()=>{closeActivity();openAcademy();openLesson(worldLearning[world][kid])};actions.insertBefore(b,actions.firstChild)}};
+const integratedStart=start;start=function(id){integratedStart(id);document.getElementById("academyBtn").textContent="📚 Learn & Play";let t=document.getElementById("hint");if(t)t.textContent="Explore the world or open Learn & Play for interactive lessons."};
+const integratedTick=tick;tick=function(ts){integratedTick(ts);if(playing&&!activityOpen&&!academyActive){let hint=document.getElementById("hint");if(hint&&nearest){hint.textContent=nearest.icon+" Discovery nearby · Tap Explore when ready";hint.classList.add("show")}}};
+const integratedFinish=finishLesson;finishLesson=function(){let i=lessonIndex;if(i<0)return;let answer=lessonAnswers.join(",");let correct=true;let msg="Your work is saved. Practice again whenever you want.";
+if(kid==="joseph"&&i===0){correct=lessonAnswers.map(x=>["R","E","H","A"][x]).join("")==="HEAR";msg=correct?"You built the word HEAR!":"Let's try again. Start with H, then E, A, R."}
+if(kid==="joseph"&&i===1){correct=lessonAnswers.includes(1);msg=correct?"Three plus two is five. Well done.":"Count the birds once more. Three plus two makes five."}
+if(kid==="joseph"&&i===2){correct=answer==="2,1,0";msg=correct?"Seed, sprout, flower. You discovered the growing order!":"Try seed first, sprout next, and flower last."}
+if(kid==="joseph"&&i===4){correct=lessonAnswers.includes(1);msg=correct?"A bird flies with its wings.":"Which creature has wings?"}
+if(kid==="asher"&&i===3){correct=lessonAnswers.includes(1);msg=correct?"Correct. Five minus two plus three equals six.":"Five minus two leaves three. Add three more."}
+if(kid==="caleb"&&i===1){correct=new Set(lessonAnswers).size===4;msg=correct?"You counted all four birds!":"There are four birds. Touch each one to count."}
+if(!correct){document.getElementById("lessonFeedback").textContent=msg;say(msg);return}
+integratedFinish();let fb=document.getElementById("lessonFeedback");if(fb)fb.textContent=msg;say(msg)};
+const integratedShowLessons=showLessons;showLessons=function(){integratedShowLessons();const p=document.querySelector("#schoolContent > p");if(p)p.textContent="Choose a lesson, listen, touch, count, read, draw, and practice. You can repeat any activity. Nothing is timed."};
 </script></body></html>
