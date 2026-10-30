@@ -515,4 +515,28 @@ const freshShowWorlds=showWorlds;showWorlds=function(){freshShowWorlds();panel.i
 const freshStart=start;start=function(id){freshStart(id);let action=document.getElementById("interact");if(action){action.textContent="✦ Discover";action.setAttribute("aria-label","Discover nearby object")}let menu=document.getElementById("menuBtn");if(menu)menu.textContent="☰ Worlds";};
 const freshTick=tick;tick=function(ts){freshTick(ts);let action=document.getElementById("interact");if(action&&playing&&!wlActive){action.textContent=nearest?"✦ Discover":"✦ Look"}};
 showKids();
+</script><style>
+/* Release 2.2: prioritize the playable scene, not floating menus. */
+#worldLearningHUD{bottom:calc(104px + env(safe-area-inset-bottom));z-index:25}
+#worldLearningHUD .wlBox{background:#fff7e9f5}
+#controls{z-index:14}
+#dailyWorldChip{top:calc(68px + env(safe-area-inset-top));max-width:60vw}
+#releaseMark{display:none}
+#hud .hudbox{padding:8px 12px}
+#game{cursor:crosshair}
+@media(max-width:680px){#dailyWorldChip{top:calc(65px + env(safe-area-inset-top));max-width:50vw}#worldLearningHUD{bottom:calc(85px + env(safe-area-inset-bottom))}#worldLearningHUD .wlBox{max-height:53dvh}#controls .control.action{width:78px;height:78px}}
+</style><script>
+/* Correct coordinate mapping for CSS-scaled high-DPI canvas and make tap discoveries reliable. */
+if(wlCanvasElement){
+wlCanvasElement.addEventListener("pointerup",function(e){
+if(!playing||wlActive||activityOpen||!overlay.classList.contains("off"))return;
+const rect=wlCanvasElement.getBoundingClientRect();
+const x=(e.clientX-rect.left)*W/rect.width;
+const y=(e.clientY-rect.top)*H/rect.height;
+const candidate=items[world].map(it=>({it,dx:Math.abs(it.x-camera-x),dy:Math.abs(H*.78-45-y)})).filter(a=>a.dx<85&&a.dy<115).sort((a,b)=>a.dx-b.dx)[0];
+if(candidate)wlStart(candidate.it);
+},{passive:true});
+}
+const releaseTick=tick;tick=function(ts){releaseTick(ts);if(!playing)return;const button=document.getElementById("interact");if(button){button.textContent=wlActive?"✕ Close":nearest?"✦ Discover":"✦ Look";button.setAttribute("aria-label",wlActive?"Close learning interaction":nearest?"Discover nearby object":"Look for objects")}};
+const releaseStart=start;start=function(id){releaseStart(id);document.getElementById("sacredDayWelcome").classList.remove("show");document.getElementById("dailyWorldChip").classList.add("show");const c=document.getElementById("dailyWorldChip");c.textContent="📜 "+sacredToday().daily.word+" · "+sacredToday().daily.verse};
 </script></body></html>
