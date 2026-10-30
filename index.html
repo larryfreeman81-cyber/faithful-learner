@@ -14,7 +14,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id),canvas=$("world"),ctx=canvas.getContext("2d"),TAU=Math.PI*2;
-let W=0,H=0,VW=0,VH=0,DPR=1,camX=0,camY=0,clock=0,kid="",player={x:.14,y:.74,tx:.14,ty:.74,face:1},speaking="",voiceEnabled=true,activeQuestion=null,noticeTimer=null;
+let W=0,H=0,VW=0,VH=0,DPR=1,camX=0,camY=0,clock=0,kid="",player={x:.10,y:.74,tx:.10,ty:.74,face:1},speaking="",voiceEnabled=true,activeQuestion=null,noticeTimer=null;
 const names={asher:"Asher",joseph:"Joseph",caleb:"Caleb"};
 const stages=[
 {title:"Gather three glowing seeds",kind:"seed",count:3,hint:"Find the golden seeds near the grass. Tap them, or walk close and press the hand."},
@@ -34,16 +34,18 @@ const things=[
 // A large connected world: five regions and a long route between them.
 things.splice(0,things.length,
 {x:.10,y:.73,type:"seed",emoji:"🌰"},{x:.16,y:.77,type:"seed",emoji:"🌰"},{x:.23,y:.68,type:"seed",emoji:"🌰"},
-{x:.31,y:.66,type:"clue",emoji:"🔎"},{x:.39,y:.74,type:"clue",emoji:"🔎"},
-{x:.49,y:.63,type:"garden",emoji:"🌱"},{x:.54,y:.75,type:"garden",emoji:"🌱"},
-{x:.62,y:.59,type:"puzzle",emoji:"🧩"},{x:.72,y:.74,type:"puzzle",emoji:"💡"},{x:.79,y:.58,type:"puzzle",emoji:"🔤"},
-{x:.85,y:.75,type:"build",emoji:"🛠️"},{x:.94,y:.74,type:"tree",emoji:"🌳"});
+{x:.26,y:.66,type:"clue",emoji:"🔎"},{x:.32,y:.74,type:"clue",emoji:"🔎"},
+{x:.51,y:.63,type:"garden",emoji:"🌱"},{x:.57,y:.75,type:"garden",emoji:"🌱"},
+{x:.65,y:.59,type:"puzzle",emoji:"🧩"},{x:.72,y:.74,type:"puzzle",emoji:"💡"},{x:.78,y:.58,type:"puzzle",emoji:"🔤"},
+{x:.86,y:.75,type:"build",emoji:"🛠️"},{x:.95,y:.74,type:"tree",emoji:"🌳"});
 const regions=[
-{name:"Sunflower Meadow",x:.12,subtitle:"Find glowing seeds",emoji:"🌻"},
-{name:"Whispering Woods",x:.34,subtitle:"Search for clues",emoji:"🌲"},
-{name:"Blooming Gardens",x:.52,subtitle:"Help plants grow",emoji:"🌷"},
-{name:"Wonder Valley",x:.73,subtitle:"Solve mysteries",emoji:"✨"},
-{name:"Maker's Village",x:.87,subtitle:"Build something wonderful",emoji:"🏠"}
+{name:"Sunflower Meadow",x:.10,subtitle:"Golden fields and tiny creatures",emoji:"🌻"},
+{name:"Whispering Woods",x:.29,subtitle:"Ancient trees and hidden clues",emoji:"🌲"},
+{name:"Crystal Falls",x:.43,subtitle:"Waterfalls and rainbow caves",emoji:"💎"},
+{name:"Blooming Gardens",x:.54,subtitle:"A living garden to care for",emoji:"🌷"},
+{name:"Wonder Valley",x:.70,subtitle:"Mysteries beneath the mountains",emoji:"✨"},
+{name:"Maker's Village",x:.84,subtitle:"Build a place of your own",emoji:"🏠"},
+{name:"The Great Tree",x:.95,subtitle:"A quiet place to remember",emoji:"🌳"}
 ];
 const questions=[
 [{q:"Which animal grows from a tadpole?",a:["Frog","Butterfly"],right:0,why:"A tadpole grows into a frog."},{q:"What do birds use to fly?",a:["Wings","Shoes"],right:0,why:"Birds use their wings to fly."},{q:"Which animal makes honey?",a:["Bee","Rabbit"],right:0,why:"Bees gather nectar and make honey."}],
@@ -54,7 +56,7 @@ const questions=[
 let save={stage:0,progress:0,stars:0,bag:0,done:[],round:0,plants:0,built:false};
 function store(){if(kid)localStorage.setItem("wonderwild:"+kid,JSON.stringify(save))}
 function load(){try{save=Object.assign({stage:0,progress:0,stars:0,bag:0,done:[],round:0,plants:0,built:false},JSON.parse(localStorage.getItem("wonderwild:"+kid)||"{}"))}catch(e){}}
-function size(){DPR=Math.min(devicePixelRatio||1,2);VW=innerWidth;VH=innerHeight;W=Math.max(2400,VW*4);H=Math.max(1550,VH*3);canvas.width=Math.round(VW*DPR);canvas.height=Math.round(VH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener("resize",size);size();
+function size(){DPR=Math.min(devicePixelRatio||1,2);VW=innerWidth;VH=innerHeight;W=Math.max(6400,VW*9);H=Math.max(2000,VH*3);canvas.width=Math.round(VW*DPR);canvas.height=Math.round(VH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener("resize",size);size();
 function dot(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
 function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill()}
 function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
@@ -63,7 +65,7 @@ function axelSay(s,show=true){speaking=s;$("speechText").textContent=s;$("speech
 function alertGame(s){$("notice").textContent=s;$("notice").classList.remove("hidden");clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$("notice").classList.add("hidden"),1500)}
 function stage(){return stages[Math.min(save.stage,stages.length-1)]}
 function hud(){let s=stage();$("missionTitle").textContent=s.title;$("missionDetail").textContent=save.progress+" of "+s.count+" · "+(save.stage===5?"Final discovery":"Adventure "+(save.stage+1)+" of 6");$("missionBar").style.width=(100*save.progress/s.count)+"%";$("stars").textContent="⭐ "+save.stars;$("bag").textContent="🎒 "+save.bag}
-function complete(){save.progress++;save.stars+=2;if(save.progress>=stage().count){save.stage=(save.stage+1)%stages.length;save.progress=0;save.round++;alertGame("⭐ Adventure complete!");axelSay("Wonderful work! "+stage().hint)}else{alertGame("⭐ Great discovery!");axelSay("That's it! "+(stage().count-save.progress)+" more to go.",false)}store();hud()}
+function complete(){save.progress++;save.stars+=2;if(save.progress>=stage().count){save.stage=(save.stage+1)%stages.length;save.progress=0;save.round++;if(save.stage===0){save.done=[];save.plants=0;save.built=false;}alertGame("⭐ Adventure complete!");axelSay("Wonderful work! "+stage().hint)}else{alertGame("⭐ Great discovery!");axelSay("That's it! "+(stage().count-save.progress)+" more to go.",false)}store();hud()}
 function interact(t){if(activeQuestion)return;const s=stage();if(t.type!==s.kind){axelSay("Great curiosity! Right now, "+s.hint);return}if(["seed","clue"].includes(t.type)){if(save.done.includes(t.type+things.indexOf(t))){axelSay("You've discovered this already! Try another sparkling one.",false);return}save.done.push(t.type+things.indexOf(t));save.bag++;complete()}else if(t.type==="garden"){save.plants++;complete()}else if(t.type==="puzzle"){const bank=questions[(save.round+things.indexOf(t))%questions.length],q=bank[(save.round+save.progress)%bank.length];const flip=Math.random()<.5;activeQuestion={q,flip};$("questionTitle").textContent=q.q;$("questionDetail").textContent="Look closely and choose.";$("answers").innerHTML="";[0,1].forEach(i=>{let b=document.createElement("button");b.textContent=q.a[flip?1-i:i];b.onclick=()=>answer(i===(flip?1-q.right:q.right));$("answers").appendChild(b)});$("activity").classList.remove("hidden");axelSay("Let's solve this together. "+q.q,false)}else if(t.type==="build"){save.built=true;save.bag=Math.max(0,save.bag-2);complete()}else if(t.type==="tree"){complete();axelSay("Look how far you've come! We gathered, observed, helped, learned, and built. Now we can begin a new adventure.")}}
 function answer(ok){if(!activeQuestion)return;if(ok){const q=activeQuestion.q;activeQuestion=null;$("activity").classList.add("hidden");complete();axelSay("Yes! "+q.why)}else{axelSay("Not quite. Let's look again and think about the choices.",false);$("questionDetail").textContent="Try again — you can do it."}}
 function nearby(){return things.map(t=>({t,d:Math.hypot((t.x-player.x)*W,(t.y-player.y)*H)})).sort((a,b)=>a.d-b.d)[0]}
@@ -74,21 +76,31 @@ const held={left:false,right:false};for(let side of ["left","right"]){const b=$(
 $("action").onclick=()=>{let n=nearby();if(n.d<150)interact(n.t);else{move(n.t.x,n.t.y);axelSay("Follow me! Let's go see what's over there.",false)}};
 $("axel").onclick=()=>axelSay("Hello "+names[kid]+"! I'm Axel. "+stage().hint);
 $("repeat").onclick=()=>speak(speaking);$("speechClose").onclick=()=>$("speech").classList.add("hidden");
-$("map").onclick=()=>{const text=regions.map((r,i)=>(i+1)+". "+r.name).join(" · ");axelSay("Our world has five big regions! "+text+". Tap the ground to walk, or use the arrows to explore.");};$("menu").onclick=()=>$("pause").classList.remove("hidden");$("resume").onclick=()=>$("pause").classList.add("hidden");$("change").onclick=()=>{$("pause").classList.add("hidden");$("welcome").classList.remove("hidden");$("speech").classList.add("hidden")};
+$("map").onclick=()=>{$("pause").classList.remove("hidden");$("pause").querySelector("h1").textContent="Explore the world";$("pause").querySelector("p").textContent="Choose a destination. Axel will travel with you.";let box=$("pause").querySelector(".regionJump");if(!box){box=document.createElement("div");box.className="regionJump";box.style.cssText="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0";$("resume").before(box)}box.innerHTML="";regions.forEach(r=>{let b=document.createElement("button");b.className="choice";b.textContent=r.emoji+" "+r.name;b.onclick=()=>{move(r.x,.74);$("pause").classList.add("hidden");axelSay("Here we go! Welcome to "+r.name+". "+r.subtitle+".",false)};box.appendChild(b)});};$("menu").onclick=()=>$("pause").classList.remove("hidden");$("resume").onclick=()=>$("pause").classList.add("hidden");$("change").onclick=()=>{$("pause").classList.add("hidden");$("welcome").classList.remove("hidden");$("speech").classList.add("hidden")};
 document.querySelectorAll("[data-kid]").forEach(b=>b.onclick=()=>{kid=b.dataset.kid;load();hud();$("welcome").classList.add("hidden");const date=new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric",timeZone:"America/New_York"}).format(new Date());axelSay("Hello "+names[kid]+"! Today is "+date+". I'm Axel, your adventure friend. "+stage().hint)});
-function drawRegions(){for(const r of regions){let x=r.x*W,y=H*.5;ctx.save();ctx.textAlign="center";ctx.shadowColor="#174b4a";ctx.shadowBlur=16;rounded(x-110,y-60,220,75,22,"#fff5d5");ctx.shadowBlur=0;ctx.fillStyle="#29586b";ctx.font="900 23px Trebuchet MS";ctx.fillText(r.emoji+" "+r.name,x,y-26);ctx.font="bold 14px Trebuchet MS";ctx.fillText(r.subtitle,x,y-4);ctx.restore()}}function cloud(x,y,s){ctx.save();ctx.globalAlpha=.82;ellipse(x,y,46*s,18*s,"#fff");ellipse(x-28*s,y+6*s,31*s,15*s,"#fff");ellipse(x+28*s,y+6*s,35*s,15*s,"#fff");ctx.restore()}
+function drawRegions(){for(const r of regions){let x=r.x*W,y=H*.49;ctx.save();ctx.textAlign="center";ctx.shadowColor="#174b4a";ctx.shadowBlur=16;rounded(x-155,y-66,310,85,22,"#fff5d5");ctx.shadowBlur=0;ctx.fillStyle="#29586b";ctx.font="900 25px Trebuchet MS";ctx.fillText(r.emoji+" "+r.name,x,y-30);ctx.font="bold 14px Trebuchet MS";ctx.fillText(r.subtitle,x,y-5);ctx.restore()}}function cloud(x,y,s){ctx.save();ctx.globalAlpha=.82;ellipse(x,y,46*s,18*s,"#fff");ellipse(x-28*s,y+6*s,31*s,15*s,"#fff");ellipse(x+28*s,y+6*s,35*s,15*s,"#fff");ctx.restore()}
 function tree(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,15,32,8,"#236c6577");rounded(-8,-88,16,103,6,"#83573e");for(let i=0;i<7;i++){const a=i*2.4;dot(Math.sin(a)*28,-93+Math.cos(a)*18,28,["#1b936c","#32af76","#61c98a"][i%3])}dot(-16,-111,6,"#9ae5a3");ctx.restore()}
+function mountain(x,y,s,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x-230*s,y);ctx.lineTo(x,y-290*s);ctx.lineTo(x+230*s,y);ctx.closePath();ctx.fill();ctx.fillStyle="#fffaf0";ctx.beginPath();ctx.moveTo(x-52*s,y-224*s);ctx.lineTo(x,y-290*s);ctx.lineTo(x+57*s,y-218*s);ctx.lineTo(x+14*s,y-231*s);ctx.lineTo(x-15*s,y-215*s);ctx.closePath();ctx.fill()}
+function flower(x,y,s,color){ctx.strokeStyle="#2d9259";ctx.lineWidth=3*s;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-18*s);ctx.stroke();for(let k=0;k<7;k++){let a=k*TAU/7;dot(x+Math.cos(a)*8*s,y-24*s+Math.sin(a)*8*s,6*s,color)}dot(x,y-24*s,5*s,"#8d542a")}
+function pine(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);rounded(-6,-13,12,57,3,"#67452e");for(let i=0;i<4;i++){ctx.fillStyle=["#11644f","#20846a","#359a78"][i%3];ctx.beginPath();ctx.moveTo(0,-132+i*27);ctx.lineTo(-43+i*5,-38+i*17);ctx.lineTo(43-i*5,-38+i*17);ctx.fill()}ctx.restore()}
+function house(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,15,92,20,"#14594b55");rounded(-64,-87,128,100,15,"#f8d79d");rounded(-53,-77,106,80,10,"#ffe8ba");ctx.fillStyle="#bb7455";ctx.beginPath();ctx.moveTo(-78,-87);ctx.lineTo(0,-151);ctx.lineTo(78,-87);ctx.closePath();ctx.fill();rounded(-17,-49,34,62,10,"#91604b");rounded(-48,-65,23,25,5,"#9ddce8");rounded(25,-65,23,25,5,"#9ddce8");ctx.restore()}
+function waterfall(x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle="#747e8c";ctx.beginPath();ctx.moveTo(-150,40);ctx.lineTo(-90,-190);ctx.lineTo(45,-210);ctx.lineTo(125,45);ctx.fill();ctx.fillStyle="#b5f1f4";ctx.beginPath();ctx.moveTo(-40,-187);ctx.lineTo(35,-191);ctx.bezierCurveTo(65,-100,12,-40,52,45);ctx.lineTo(-65,45);ctx.bezierCurveTo(-26,-70,-78,-105,-40,-187);ctx.fill();for(let i=0;i<9;i++)dot(Math.sin(clock*2+i)*50,50+Math.sin(clock*3+i)*8,5+i%3,"#e7ffff");ellipse(0,54,138,29,"#66d7e5");ctx.restore()}
+function biome(x){return x/W<.2?0:x/W<.37?1:x/W<.47?2:x/W<.62?3:x/W<.79?4:x/W<.91?5:6}
 function scene(){
-let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#4baee5");sky.addColorStop(.65,"#c4f5e5");sky.addColorStop(1,"#f6dfac");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
-ctx.shadowColor="#fff4ad";ctx.shadowBlur=42;dot(W*.82,H*.17,Math.max(30,W*.035),"#fff2a8");ctx.shadowBlur=0;
-for(let i=0;i<7;i++)cloud((i*253+clock*8)%(W+170)-80,H*(.13+(i%3)*.1),.7+i%3*.15);
-for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(0,H);for(let x=0;x<=W+25;x+=25)ctx.lineTo(x,H*(.43+j*.14)+Math.sin(x/W*8+j*2)*H*.055);ctx.lineTo(W,H);ctx.fillStyle=["#9adab1","#66c99d","#2c9d78"][j];ctx.fill()}
-ctx.beginPath();ctx.moveTo(W*.42,H);ctx.bezierCurveTo(W*.45,H*.85,W*.55,H*.75,W*.48,H*.67);ctx.lineTo(W*.55,H*.67);ctx.bezierCurveTo(W*.66,H*.83,W*.7,H*.91,W*.78,H);ctx.closePath();ctx.fillStyle="#efd1a2";ctx.fill();
-for(let i=0;i<20;i++){let x=(i*139.7)%W,y=H*(.68+(i%5)*.047);tree(x,y,.55+(i%3)*.2)}
-for(let i=0;i<85;i++){let x=(i*67.3)%W,y=H*(.72+(i%7)*.038);dot(x,y,2.5+(i%3),i%2?"#ffe89a":"#ffc5d1")}
-tree(W*.94,H*.74,1.7);
-ctx.fillStyle="#fff6ce";ctx.textAlign="center";ctx.font="900 14px Trebuchet MS";ctx.fillText("THE GREAT TREE",W*.94,H*.74-190);
-if(save.built){rounded(W*.75-28,H*.84-52,56,50,7,"#f7dfa4");ctx.beginPath();ctx.moveTo(W*.75-36,H*.84-51);ctx.lineTo(W*.75,H*.84-83);ctx.lineTo(W*.75+36,H*.84-51);ctx.fillStyle="#ba6e4e";ctx.fill()}
+const left=Math.max(0,camX-220),right=Math.min(W,camX+VW+220);
+let sky=ctx.createLinearGradient(0,camY,0,camY+VH);sky.addColorStop(0,"#4aaee7");sky.addColorStop(.65,"#bdf0e4");sky.addColorStop(1,"#e5f9cf");ctx.fillStyle=sky;ctx.fillRect(left,Math.max(0,camY-10),right-left,VH+40);
+ctx.shadowColor="#fff1a6";ctx.shadowBlur=50;dot(camX+VW*.78,camY+VH*.15,43,"#fff2ad");ctx.shadowBlur=0;
+for(let i=Math.floor(left/300);i<Math.ceil(right/300);i++)cloud(i*300+Math.sin(clock*.12+i)*24,H*.13+(i%3)*55,.9);
+for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(left,H);for(let x=left;x<=right+40;x+=40){ctx.lineTo(x,H*(.45+j*.12)+Math.sin(x/360+j*2)*H*.045)}ctx.lineTo(right,H);ctx.fillStyle=["#afd7be","#79bf9e","#43a67d"][j];ctx.fill()}
+for(let i=Math.floor(left/260);i<Math.ceil(right/260);i++){let x=i*260+130,zone=biome(x);if(zone===4)mountain(x,H*.65,.55+(i%3)*.16,"#7897a8");if(zone===1)pine(x,H*.75,.9+(i%3)*.3);else if(zone===0)tree(x,H*.75,.8+(i%3)*.2);else if(zone===3){tree(x,H*.75,.65);for(let k=0;k<5;k++)flower(x-80+k*31,H*.84,1.1,["#f4a9c5","#fff1a1","#d5a4f3"][k%3])}else if(zone===5&&i%2===0)house(x,H*.77,.7);else if(zone===6)tree(x,H*.74,1.2);else if(zone===2&&i%2===0)pine(x,H*.76,.6)}
+ctx.beginPath();ctx.moveTo(left,H*.85);for(let x=left;x<=right+40;x+=40)ctx.lineTo(x,H*(.84+Math.sin(x/270)*.025));ctx.lineTo(right,H);ctx.lineTo(left,H);ctx.fillStyle="#58b77d";ctx.fill();
+ctx.beginPath();ctx.moveTo(left,H*.78);for(let x=left;x<=right+40;x+=40)ctx.lineTo(x,H*(.78+Math.sin(x/330)*.03));ctx.lineTo(right,H*.9);ctx.lineTo(left,H*.9);ctx.fillStyle="#efc895";ctx.fill();
+for(let i=Math.floor(left/75);i<Math.ceil(right/75);i++){let x=i*75,y=H*(.84+(i%4)*.03),zone=biome(x);if(zone===0)flower(x,y,1.5,"#ffdc59");if(zone===3)flower(x,y,1.4,"#ff9bc5");if(zone===2)dot(x,y,7,"#8eeef0");if(zone===4)dot(x,y,6,"#c8ddf6");if(zone===1)dot(x,y,4,"#ffe2a6")}
+if(left<W*.48&&right>W*.38)waterfall(W*.425,H*.64);
+if(left<W*.9&&right>W*.79){house(W*.84,H*.72,1.5);house(W*.89,H*.76,.95)}
+if(left<W*.98&&right>W*.9){tree(W*.95,H*.73,2.4);ctx.fillStyle="#fff6d8";ctx.font="bold 24px Trebuchet MS";ctx.textAlign="center";ctx.fillText("THE GREAT TREE",W*.95,H*.73-275)}
+if(save.built)house(W*.865,H*.84,.8);
+for(let i=Math.floor(left/160);i<Math.ceil(right/160);i++){let x=i*160,y=H*.68+(i%4)*24;if(i%3===0){ctx.save();ctx.globalAlpha=.4+.25*Math.sin(clock*2+i);dot(x,y,3,"#fffbd0");ctx.restore()}}
 }
 function marker(t,i){const x=t.x*W,y=t.y*H,used=save.done.includes(t.type+i),right=stage().kind===t.type;if(used&&["seed","clue"].includes(t.type))return;ctx.save();ctx.shadowColor=right?"#fff1a5":"#1c756b";ctx.shadowBlur=right?27:10;dot(x,y+Math.sin(clock*3+i)*3,right?28:24,right?"#fff3b9":"#d6f8df");ctx.shadowBlur=0;ctx.font="30px system-ui";ctx.textAlign="center";ctx.fillText(t.emoji,x,y+10+Math.sin(clock*3+i)*3);if(right){ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,34+Math.sin(clock*3)*2,0,TAU);ctx.stroke()}ctx.restore()}
 function explorer(){if(!kid)return;const x=player.x*W,y=player.y*H,bob=Math.abs(player.tx-player.x)>.01?Math.sin(clock*13)*5:Math.sin(clock*2)*2,s=Math.max(1,Math.min(1.8,W/700));ctx.save();ctx.translate(x,y+bob);ctx.scale(s,s);ellipse(0,5,24,7,"#1d5d5866");rounded(-13,-22,11,24,5,"#264357");rounded(2,-22,11,24,5,"#264357");rounded(-19,-53,38,35,10,"#f1a65e");rounded(-18,-53,36,9,5,"#e88455");rounded(-25,-46,9,26,5,"#995f46");rounded(16,-46,9,26,5,"#995f46");ellipse(0,-70,20,23,"#985f43");ellipse(0,-89,20,12,"#2d2928");dot(-8,-72,3,"#172b36");dot(8,-72,3,"#172b36");ctx.strokeStyle="#633f36";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-65,7,.2,Math.PI-.2);ctx.stroke();rounded(-28,-118,56,22,10,"#fff6d9");ctx.fillStyle="#315369";ctx.textAlign="center";ctx.font="bold 12px system-ui";ctx.fillText(names[kid],0,-103);ctx.restore()}
