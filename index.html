@@ -450,4 +450,47 @@ const calendarWorlds=showWorlds;showWorlds=function(){document.getElementById("s
 const calendarScene=inWorldScene;inWorldScene=function(){calendarScene();let d=sacredToday(),card=document.getElementById("activityCard");if(card){let intro=document.createElement("div");intro.className="gameNote";intro.textContent="TODAY · "+d.daily.word+" · "+d.daily.verse+" — "+d.daily.task;card.prepend(intro)}};
 const calendarTopic=worldLessonIndex;worldLessonIndex=function(it){let d=sacredToday(),n=items[world].findIndex(x=>x.id===it.id);/* The first encounter in every world follows today's course; remaining encounters rotate through all 12 courses. */return n===0?d.daily.course:calendarTopic(it)};
 setInterval(()=>{if(playing)sacredRefresh()},60000);
+</script><style>
+/* Uninterrupted adventure: the landscape itself is the learning interface. */
+#sacredDayWelcome,#sacredDayBanner,#discoveryStatus,#journal,#timeRibbon,#voiceSettings,#guidePanel,#companionTalk,#heroStory,#academyBtn,#explorePrompt,#hint{display:none!important}
+#activity{display:none!important}
+#worldLearningHUD{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:12;width:min(550px,calc(100vw - 24px));display:none;pointer-events:none}
+#worldLearningHUD.show{display:block}
+#worldLearningHUD .wlBox{background:#fff5dff2;color:#214b38;border:2px solid #e3c991;border-radius:18px;padding:12px 14px;box-shadow:0 8px 28px #082a2766;pointer-events:auto;max-height:45dvh;overflow:auto}
+#worldLearningHUD h3{font-size:clamp(1.06rem,3vw,1.3rem);margin:4px 0}#worldLearningHUD p{font-size:clamp(.93rem,2.5vw,1.1rem);margin:5px 0;line-height:1.35}
+#worldLearningHUD .wlActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+#worldLearningHUD button{border:1px solid #91b99e;background:#dcebd5;color:#234e37;border-radius:12px;padding:9px;min-height:46px;font-weight:750;font-size:1rem;flex:1}
+#worldLearningHUD button.wlPrimary{background:#2e7252;color:white}
+#worldLearningHUD .wlOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+#worldLearningHUD .wlOptions button{min-height:55px}
+#worldLearningHUD .wlSketch{width:100%;height:125px;background:white;border:2px solid #a0bca4;border-radius:12px;touch-action:none}
+#worldLearningHUD .wlMeta{font-size:.77rem;color:#536b57}
+#worldLearningHUD .wlFeedback{font-size:.9rem;color:#345d45}
+#worldLearningHUD .wlProgress{height:5px;background:#cbdcc7;border-radius:8px;overflow:hidden;margin:6px 0}
+#worldLearningHUD .wlProgress i{display:block;height:100%;background:#3a9567}
+#dailyWorldChip{position:fixed;top:calc(9px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:7;background:#173d35d9;color:#fff5d8;border:1px solid #e6d6a7;border-radius:24px;padding:6px 13px;font-size:.83rem;max-width:43vw;text-align:center;pointer-events:none;display:none}
+#dailyWorldChip.show{display:block}
+@media(max-width:680px){#worldLearningHUD{bottom:calc(92px + env(safe-area-inset-bottom))}#worldLearningHUD .wlBox{max-height:47dvh;padding:9px 11px}#worldLearningHUD button{font-size:.92rem;min-height:42px;padding:7px}#dailyWorldChip{font-size:.72rem;max-width:38vw}}
+@media(max-width:680px) and (max-height:530px){#worldLearningHUD{bottom:calc(74px + env(safe-area-inset-bottom));width:min(420px,64vw);left:51%}#worldLearningHUD .wlBox{max-height:60dvh}#dailyWorldChip{display:none!important}}
+</style><div id="dailyWorldChip"></div><div id="worldLearningHUD" aria-live="polite"></div><script>
+/* A discovery grows out of the world, with no scene switch or blocking overlay. */
+let wlItem=null,wlTopic=0,wlStep=0,wlReady=false,wlActive=false,wlLastKey="",wlShownDay="";
+function wlPanel(html){let p=document.getElementById("worldLearningHUD");p.innerHTML='<div class="wlBox">'+html+'</div>';p.classList.add("show")}
+function wlHide(){wlActive=false;wlItem=null;document.getElementById("worldLearningHUD").classList.remove("show");keys.left=keys.right=false;stopVoice()}
+function wlSpeak(){if(!wlItem)return;let q=learningTopics[wlTopic][3][wlStep];say(worldGuides[kid].name+" says: "+q[0]+". "+q[1]+(q[2]?" Choose: "+q[2].join(". "):" Draw or tell someone your idea."),true)}
+function wlStart(it){if(!it||wlActive)return;wlActive=true;wlItem=it;wlTopic=worldLessonIndex(it);wlStep=0;keys.left=keys.right=false;wlScene()}
+function wlScene(){let q=learningTopics[wlTopic][3][wlStep],t=learningTopics[wlTopic],last=!q[2];wlReady=false;let options=last?'<div class="wlActions"><button onclick="wlDraw()">🎨 Draw</button><button class="wlPrimary" onclick="wlNext()">Tell my idea →</button></div>':'<div class="wlOptions">'+q[2].map((a,i)=>'<button id="wlOption'+i+'" onclick="wlAnswer('+i+')">'+a+'</button>').join("")+'</div><div class="wlActions"><button id="wlNextBtn" class="wlPrimary" style="display:none" onclick="wlNext()">Continue →</button></div>';wlPanel('<div class="wlMeta">'+wlItem.icon+' '+t[1]+' · '+(wlStep+1)+' / '+t[3].length+' · '+sacredToday().daily.word+'</div><div class="wlProgress"><i style="width:'+Math.round(wlStep/t[3].length*100)+'%"></i></div><h3>'+q[0]+'</h3><p>'+q[1]+'</p>'+options+'<div class="wlFeedback" id="wlFeedback">You can take your time.</div><div class="wlActions"><button onclick="wlSpeak()">🔊 Listen</button><button onclick="wlHide()">Keep walking</button></div>');wlSpeak()}
+function wlAnswer(i){if(wlReady)return;let q=learningTopics[wlTopic][3][wlStep],b=document.getElementById("wlOption"+i);if(!b)return;if(i===q[3]){wlReady=true;b.style.background="#a7e4b4";document.getElementById("wlFeedback").textContent="That's it! "+q[1];document.getElementById("wlNextBtn").style.display="block";say("That's it! "+q[1],true)}else{b.style.background="#f7d6ab";document.getElementById("wlFeedback").textContent="Listen again and try another.";say("Let's try again. "+q[1],true)}}
+function wlNext(){if(wlStep<learningTopics[wlTopic][3].length-1){wlStep++;wlScene();return}let it=wlItem;wlHide();nearest=it;originalInteract();updateQuest();try{localStorage.setItem("faithful-inworld:"+kid+":"+world+":"+it.id,"complete")}catch(e){}say("Discovery complete. Keep exploring!",true)}
+function wlDraw(){let q=learningTopics[wlTopic][3][wlStep];wlPanel('<h3>🎨 '+q[0]+'</h3><p>'+q[1]+'</p><canvas id="wlCanvas" class="wlSketch" width="720" height="190"></canvas><div class="wlActions"><button onclick="wlScene()">Back</button><button class="wlPrimary" onclick="wlNext()">Finish →</button></div>');let c=document.getElementById("wlCanvas"),cx=c.getContext("2d"),down=false;cx.strokeStyle="#35734f";cx.lineWidth=7;cx.lineCap="round";function pt(e){let r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]}c.addEventListener("pointerdown",e=>{down=true;c.setPointerCapture(e.pointerId);cx.beginPath();cx.moveTo(...pt(e))});c.addEventListener("pointermove",e=>{if(down){cx.lineTo(...pt(e));cx.stroke()}});c.addEventListener("pointerup",()=>down=false);c.addEventListener("pointercancel",()=>down=false);wlSpeak()}
+interact=function(){if(!playing)return;if(wlActive){wlHide();return}if(nearest)wlStart(nearest);else say("Walk closer to a glowing discovery.",true)};
+/* Touching an object directly starts learning. Tap the illustrated object in the scenery. */
+const wlCanvas=document.getElementById("game");const wlCanvasElement=wlCanvas||document.querySelector("canvas");if(wlCanvasElement)wlCanvasElement.addEventListener("pointerup",e=>{if(!playing||wlActive||activityOpen)return;let r=wlCanvasElement.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(y<r.height*.3||y>r.height*.85)return;let it=items[world].find(v=>Math.abs(v.x-camera-x)<65&&Math.abs(r.height*.78-45-y)<90);if(it)wlStart(it)});
+const wlDrawItems=drawItems;drawItems=function(){wlDrawItems();if(!playing)return;items[world].forEach((it,i)=>{let x=it.x-camera,y=H*.78-45+Math.sin(clock*1.6+i)*9;if(x<0||x>W)return;ctx.save();ctx.globalAlpha=.8;ctx.fillStyle=found[it.id]?"#d7f5bf":"#ffe6a0";ctx.beginPath();ctx.arc(x,y-91,5+Math.sin(clock*3+i)*2,0,Math.PI*2);ctx.fill();ctx.restore()})};
+const wlStartWorld=start;start=function(id){wlStartWorld(id);document.getElementById("sacredDayWelcome").classList.remove("show");document.getElementById("dailyWorldChip").classList.add("show");wlHide();wlUpdateDay();let k=kid+":"+sacredToday().iso;if(wlShownDay!==k){wlShownDay=k;say(sacredIntroText(),true)}};
+function wlUpdateDay(){let d=sacredToday(),c=document.getElementById("dailyWorldChip");c.textContent="📜 "+d.daily.word+" · "+d.daily.verse;document.getElementById("sacredDayWelcome").classList.remove("show")}
+const wlTick=tick;tick=function(ts){wlTick(ts);if(!playing)return;let c=document.getElementById("dailyWorldChip");if(!c.classList.contains("show"))c.classList.add("show");if(wlActive){keys.left=false;keys.right=false}let p=document.getElementById("explorePrompt");if(p)p.classList.remove("show")};
+setInterval(()=>{if(playing)wlUpdateDay()},60000);
+const wlShowKids=showKids;showKids=function(){wlHide();document.getElementById("dailyWorldChip").classList.remove("show");wlShowKids()};
+const wlShowWorlds=showWorlds;showWorlds=function(){wlHide();document.getElementById("dailyWorldChip").classList.remove("show");wlShowWorlds()};
 </script></body></html>
