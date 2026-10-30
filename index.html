@@ -50,4 +50,34 @@ function closeActivity(){activityOpen=false;document.getElementById("activity").
 interact=function(){if(!playing||activityOpen||!nearest)return;openActivity(nearest)};
 const oldTick=tick;tick=function(ts){if(activityOpen){keys.left=false;keys.right=false}oldTick(ts)};
 const oldShowKids=showKids;showKids=function(){oldShowKids();panel.querySelector("h1").textContent="FAITHFUL LEARNER · ADVENTURE";};
+</script><style>
+/* Readable discovery experience */
+#activity{background:#071f1be8;padding:12px} .activity-card{width:min(760px,100%);background:#fffaf0;color:#183c31;max-height:94dvh;border-radius:24px;padding:clamp(20px,5vw,40px);overflow-y:auto}
+.activity-card h2{font-size:clamp(2rem,5vw,3.1rem);line-height:1.12;margin:12px 0 18px}.activity-card p{font-size:clamp(1.2rem,2.8vw,1.65rem);line-height:1.55}
+.activity-card .activity-scene{height:clamp(160px,30vh,245px)}.activity-card .activity-scene button{font-size:clamp(2.5rem,7vw,4rem);min-width:70px;min-height:78px}
+.activity-actions button{font-size:1.1rem;min-height:56px;padding:14px 22px}.activity-actions .listen{background:#335e91}.activity-actions .pause{background:#765f42}
+#voiceSettings{position:fixed;top:calc(78px + env(safe-area-inset-top));right:14px;z-index:8;display:none;gap:8px}#voiceSettings.show{display:flex}#voiceSettings button{background:#fff7e8;color:#1d4c3d;padding:10px 14px;border-radius:13px;font-weight:750;border:1px solid #f6e3ae}
+#hint{font-size:clamp(1rem,2.5vw,1.2rem);max-width:85vw}#toast{display:none!important}
+#controls{bottom:calc(14px + env(safe-area-inset-bottom))}.control{width:86px;height:86px}.control.action{width:106px;height:106px;font-size:1.15rem}
+#journal{display:none!important}#quest{top:calc(78px + env(safe-area-inset-top));max-width:min(390px,68vw)}#quest p{font-size:1.02rem;line-height:1.3}
+@media(max-width:600px){#voiceSettings{top:calc(72px + env(safe-area-inset-top));right:8px}#voiceSettings button{font-size:.85rem;padding:8px}#quest{top:calc(122px + env(safe-area-inset-top));max-width:75vw}#quest p{font-size:.92rem}.control{width:75px;height:75px}.control.action{width:95px;height:95px}.activity-card p{font-size:1.25rem}.activity-actions{gap:8px}.activity-actions button{flex:1 1 135px}}
+</style><div id="voiceSettings"><button id="voiceToggle" onclick="toggleVoice()">🔊 Voice on</button><button onclick="repeatVoice()">↻ Repeat</button></div><script>
+/* Accessible, child-paced learning. Speech synthesis is device/browser dependent. */
+let voiceEnabled=localStorage.getItem("faithful-voice")!=="off",lastSpoken="",speechReady="speechSynthesis" in window,activeNarration="";
+function stopVoice(){if(speechReady)window.speechSynthesis.cancel()}
+function say(t,force=false){lastSpoken=t;if(!speechReady||(!voiceEnabled&&!force))return;stopVoice();let u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=kid==="caleb"?.78:kid==="joseph"?.85:.92;u.pitch=1.05;u.volume=1;window.speechSynthesis.speak(u)}
+function repeatVoice(){if(lastSpoken)say(lastSpoken,true)}
+function syncVoice(){const b=document.getElementById("voiceToggle");b.textContent=voiceEnabled?"🔊 Voice on":"🔇 Voice off";b.setAttribute("aria-pressed",String(voiceEnabled));b.disabled=!speechReady;b.title=speechReady?"Toggle spoken narration":"Speech is not supported in this browser"}
+function toggleVoice(){voiceEnabled=!voiceEnabled;localStorage.setItem("faithful-voice",voiceEnabled?"on":"off");syncVoice();if(!voiceEnabled)stopVoice();else if(lastSpoken)repeatVoice()}
+const pacedStart=start,pacedWorlds=showWorlds,pacedKids=showKids,pacedClose=closeActivity;
+start=function(id){pacedStart(id);document.getElementById("voiceSettings").classList.add("show");document.getElementById("journal").classList.remove("show");syncVoice();say("Welcome, "+names[kid]+". "+story[id].title+". "+story[id].goal+" Use the arrows to walk. When you see a glowing creature, press Explore.")};
+showWorlds=function(){stopVoice();pacedWorlds();document.getElementById("voiceSettings").classList.remove("show")};
+showKids=function(){stopVoice();pacedKids();document.getElementById("voiceSettings").classList.remove("show")};
+closeActivity=function(){stopVoice();pacedClose()};
+const oldComplete=completeActivity;
+completeActivity=function(){stopVoice();oldComplete();document.getElementById("journal").classList.remove("show");const it=window.activeDiscovery;if(it){say("Discovery saved. "+it.text+" Continue exploring when you are ready.")}};
+openActivity=function(it){activityOpen=true;keys.left=keys.right=false;window.activeDiscovery=it;window.activityTouches=0;const box=document.getElementById("activity");box.classList.add("show");const count=items[world].indexOf(it)+1;const short=it.text;const guidance=kid==="caleb"?"Look at the pictures. Tap any picture to explore.":kid==="joseph"?"Look carefully. Touch each picture to discover something.": "Investigate the scene. Study the clues, and take your time before recording what you found.";const choices=world==="garden"?["🌱","💧","🌻"]:world==="dino"?["🦴","🔍","🦕"]:world==="sky"?["⭐","🌙","✨"]:["🌿","🐾","🦋"];
+document.getElementById("activityCard").innerHTML='<div style="font-size:.95rem;font-weight:800;letter-spacing:.08em;color:#56755e">DISCOVERY '+count+' OF '+items[world].length+'</div><h2>'+it.icon+' '+it.id.replace(/[0-9]/g,"").replace(/^./,c=>c.toUpperCase())+'</h2><p id="discoveryStory">'+short+'</p><p>'+guidance+'</p><div class="activity-scene">'+choices.map((a,j)=>'<button onclick="activityChoice('+j+')" aria-label="Explore picture '+(j+1)+'">'+a+'</button>').join("")+'</div><p id="activityFeedback" aria-live="polite">Choose a picture. Nothing will disappear until you decide to continue.</p><div class="activity-actions"><button class="listen" onclick="repeatVoice()">🔊 Listen again</button><button class="pause" onclick="stopVoice()">◼ Stop voice</button><button onclick="completeActivity()">✓ Save and continue</button><button class="secondary" onclick="closeActivity()">Return to world</button></div>';say(short+" "+guidance)};
+activityChoice=function(j){window.activityTouches++;let it=window.activeDiscovery;const messages=world==="garden"?["A seed holds the beginning of a plant.","Water helps living plants grow.","Sunlight gives plants energy to grow."]:world==="dino"?["Fossils tell us about ancient life.","Look closely at shapes and patterns.","Dinosaurs lived long before people."]:world==="sky"?["Stars shine with their own light.","The Moon reflects the Sun's light.","Some lights in the sky are very far away."]:["Plants provide food and shelter.","Animal tracks tell us who passed by.","Each creature has a role in its habitat."];let m=messages[j];document.getElementById("activityFeedback").textContent=m;let buttons=document.querySelectorAll(".activity-scene button");buttons.forEach((b,i)=>{b.style.background=i===j?"#c4e9b9":"#fff8";b.style.transform=i===j?"scale(1.08)":"none"});say(m)};
+syncVoice();
 </script></body></html>
